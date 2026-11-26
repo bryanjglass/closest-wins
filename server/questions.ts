@@ -12,6 +12,7 @@
  *  - "year" questions are Closest Overall only — going over a year is no fun.
  */
 import type { CategoryId, ScoringMode } from '../shared/protocol';
+import { MORE_QUESTIONS } from './moreQuestions';
 
 export interface Question {
   id: string;
@@ -32,7 +33,7 @@ export interface Question {
 const BOTH: ScoringMode[] = ['closest', 'withoutGoingOver'];
 const CLOSEST: ScoringMode[] = ['closest'];
 
-export const QUESTIONS: readonly Question[] = [
+const CORE_QUESTIONS: readonly Question[] = [
   // -------------------------------------------------------------------------
   // Prices & Products
   // -------------------------------------------------------------------------
@@ -1282,3 +1283,6 @@ export const QUESTIONS: readonly Question[] = [
     hint: 'Trick question… maybe.',
   },
 ];
+
+/** Every playable question: the hand-written core set plus the extended bank in `server/moreQuestions/`. */
+export const QUESTIONS: readonly Question[] = [...CORE_QUESTIONS, ...MORE_QUESTIONS];
