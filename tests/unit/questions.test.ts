@@ -1,14 +1,39 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { MORE_QUESTIONS } from '../../server/moreQuestions';
 import { QUESTIONS } from '../../server/questions';
 import { parseGuess, toScaled } from '../../shared/numbers';
 import { CATEGORY_IDS, MAX_GUESS_ABS } from '../../shared/protocol';
 
 describe('question bank', () => {
-  it('has at least 100 questions with unique ids', () => {
-    expect(QUESTIONS.length).toBeGreaterThanOrEqual(100);
+  it('has the core set plus 500 extended questions, with unique ids', () => {
+    expect(MORE_QUESTIONS).toHaveLength(500);
+    expect(QUESTIONS.length).toBeGreaterThanOrEqual(600);
     expect(new Set(QUESTIONS.map((q) => q.id)).size).toBe(QUESTIONS.length);
+  });
+
+  it('never asks the same question twice', () => {
+    const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const seen = new Map<string, string>();
+    for (const q of QUESTIONS) {
+      const key = norm(q.text);
+      expect(seen.get(key), `${q.id} duplicates ${seen.get(key)}`).toBeUndefined();
+      seen.set(key, q.id);
+    }
+  });
+
+  it('every answer is at least one step away from zero, so guesses just under it are possible', () => {
+    for (const q of QUESTIONS) {
+      if (q.allowNegative) continue;
+      expect(q.answer, q.id).toBeGreaterThanOrEqual(10 ** -q.precision);
+    }
+  });
+
+  it('extended questions are spread evenly across the categories', () => {
+    for (const cat of CATEGORY_IDS) {
+      expect(MORE_QUESTIONS.filter((q) => q.category === cat).length, cat).toBeGreaterThanOrEqual(75);
+    }
   });
 
   it('covers every category generously', () => {

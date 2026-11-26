@@ -79,7 +79,7 @@ client, alarm-driven timers) is reused from **Fib Factory** and adapted for this
 | `shared/` | Wire protocol and constants (`protocol.ts`), number parsing/exact arithmetic/formatting (`numbers.ts`), number-line layout (`numberLine.ts`), player palette. Browser-safe — no answers. |
 | `server/engine/` | Pure game logic: `game.ts` (state machine, question selection, guesses, skip, pause), `scoring.ts`, `standings.ts` (ranks, stats, awards), `views.ts` (the single place that decides what each viewer may see). |
 | `server/room/` | `controller.ts` — message handling, auth, presence, persistence and alarms against small interfaces; `durable-object.ts` — the thin Cloudflare adapter. |
-| `server/questions.ts` | The question bank (116 questions). **Server-only.** |
+| `server/questions.ts`, `server/moreQuestions/` | The question bank: 116 hand-written core questions plus 500 more in a compact row format (616 total). **Server-only.** |
 | `server/index.ts` | Worker routes, room-code allocation, CORS/origin allow-list. |
 | `client/` | Vite + React app: `views/host`, `views/tv`, `views/player`, `components/NumberLine.tsx`, `components/Leaderboard.tsx`, `net/connection.ts` (self-healing socket), `store.ts` (Zustand). |
 | `tests/` | `unit/` and `integration/` (Vitest), `e2e/` (Playwright). |
@@ -134,8 +134,9 @@ lobby → question → guessing → guessReveal → answerReveal → scoreboard 
 
 ## Questions
 
-`server/questions.ts` holds 116 family-friendly questions across six categories (Prices & Products, Animals & Nature,
-Sports & Records, Movies & Entertainment, Weird Facts, Geography & History), each with:
+The bank holds **616** family-friendly questions across six categories (Prices & Products, Animals & Nature,
+Sports & Records, Movies & Entertainment, Weird Facts, Geography & History): 116 in `server/questions.ts` and 500 more
+in `server/moreQuestions/` (one file per category, 78–88 each). Every question has:
 
 ```ts
 interface Question {
@@ -156,7 +157,21 @@ interface Question {
 Questions were chosen to be stable and unambiguous: definitions, rules, completed careers and historical events, with
 the year stated for every price or changing statistic. Year questions are Closest Overall only. Each question names its
 source; it's worth re-checking any fact you edit. `tests/unit/questions.test.ts` validates the bank (count, categories,
-precision, valid answers, no answer in the text, never imported by browser code).
+precision, valid answers, no duplicate questions, no answer in the text or hint, never imported by browser code).
+
+### Adding questions
+
+The files in `server/moreQuestions/` use one line per question:
+
+```ts
+['How many feet are in one mile?', 5280, 'ft', 'NIST Handbook 44'],
+['In what year did the Berlin Wall fall?', 1989, 'year', 'Berlin Wall Foundation'],
+['What is absolute zero in °C? (to two decimal places)', -273.15, '°C', 'BIPM', { hint: 'Negative numbers allowed!' }],
+```
+
+Defaults: `$` amounts under $1,000 allow cents; other answers allow as many decimals as the answer has; `year` questions
+and negative answers are Closest Overall only (negatives are then allowed); everything else plays both modes. Override with
+`{ p, modes, hint, fact }`. Ids come from a row's position, so **append** new rows rather than inserting them.
 
 Games draw questions at random without repetition, honoring the selected categories and each round's mode, and a
 rematch prefers questions the room hasn't seen yet.
@@ -186,7 +201,7 @@ Run the halves separately with `npm run dev:server` and `npm run dev:client`.
 
 | Command | What it does |
 | --- | --- |
-| `npm test` | Vitest unit + integration suites (113 tests, ~1 s): scoring and ties, number validation and exact arithmetic, number-line layout, state transitions, timers (fake clock), pause/skip, views/secrecy, the question bank, the room controller over fake sockets (auth, reconnection, DO reactivation, idempotent scoring, room isolation) and Worker routing. |
+| `npm test` | Vitest unit + integration suites (116 tests, ~1 s): scoring and ties, number validation and exact arithmetic, number-line layout, state transitions, timers (fake clock), pause/skip, views/secrecy, the question bank, the room controller over fake sockets (auth, reconnection, DO reactivation, idempotent scoring, room isolation) and Worker routing. |
 | `npm run test:e2e` | Playwright. Starts `wrangler dev` and Vite on ports 8799/5179 and plays real games: a host, a TV tab and **four** phone-sized players complete a 5-question Mixed game covering both scoring modes, an exact-answer bonus, ties, everyone going over, a missing guess, a timeout that finalizes an unlocked draft, player/host/TV refresh, a dropped phone that reconnects, exact cumulative scores every round, game over, and a rematch with fresh questions. A second test covers skip, pause/resume, number validation, reduced motion, unauthorized clients and unknown rooms. About 1 minute. |
 | `npm run typecheck` | TypeScript for the client/tests and the Worker. |
 | `npm run test:all` | All of the above. |
@@ -239,7 +254,7 @@ uses a relative base path and hash routes (`#/play/ABCD`), so it works from any 
 ## Known limitations
 
 - Room creation isn't rate-limited; add a Cloudflare rate-limiting rule in front of `POST /api/rooms` for a public deployment.
-- The question bank is fixed at build time; adding questions means editing `server/questions.ts`.
+- The question bank is fixed at build time; adding questions means editing `server/moreQuestions/` and redeploying the Worker.
 - Player reconnect tokens are per browser: clearing site data or switching browsers means joining again under a new name.
 - The host token lives in the creating browser's `localStorage`; opening the host link elsewhere shows a "not the host" screen.
 - E2E tests run Chromium with phone emulation, not real iOS Safari.

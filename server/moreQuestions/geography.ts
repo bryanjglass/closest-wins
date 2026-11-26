@@ -1,0 +1,101 @@
+import { buildQuestions, type Row } from './build';
+
+const BRIT = 'Encyclopaedia Britannica';
+const NARA = 'US National Archives (archives.gov)';
+const NPS = 'National Park Service (nps.gov)';
+const CIA = 'CIA World Factbook';
+const WH = 'The White House, "Presidents" (whitehouse.gov)';
+
+const rows: Row[] = [
+  // Years
+  ['In what year was Magna Carta sealed by King John?', 1215, 'year', 'The British Library, "Magna Carta"'],
+  ['In what year was the Battle of Hastings?', 1066, 'year', BRIT],
+  ['In what year did the Western Roman Empire fall, when its last emperor was removed?', 476, 'year', BRIT],
+  ['In what year was the US Constitution signed?', 1787, 'year', NARA],
+  ['In what year was the Bastille stormed, starting the French Revolution?', 1789, 'year', BRIT],
+  ['In what year did Abraham Lincoln give the Gettysburg Address?', 1863, 'year', 'Library of Congress'],
+  ['In what year did the American Civil War end?', 1865, 'year', NPS],
+  ['In what year did World War I end?', 1918, 'year', 'Imperial War Museums (iwm.org.uk)'],
+  ['In what year did World War II end?', 1945, 'year', 'The National WWII Museum'],
+  ['In what year was the attack on Pearl Harbor?', 1941, 'year', NPS],
+  ['In what year was the Statue of Liberty dedicated?', 1886, 'year', NPS],
+  ['In what year did the Golden Gate Bridge open?', 1937, 'year', 'Golden Gate Bridge, Highway & Transportation District'],
+  ['In what year was the Empire State Building completed?', 1931, 'year', 'Empire State Realty Trust'],
+  ['In what year was carving finished on Mount Rushmore?', 1941, 'year', NPS],
+  ['In what year was the Hoover Dam completed?', 1936, 'year', 'US Bureau of Reclamation'],
+  ['In what year was William Shakespeare born?', 1564, 'year', 'Shakespeare Birthplace Trust'],
+  ['In what year did the Mayflower arrive at Plymouth?', 1620, 'year', 'Plimoth Patuxet Museums'],
+  ['In what year was the Boston Tea Party?', 1773, 'year', 'Massachusetts Historical Society'],
+  ['In what year was the 19th Amendment, giving US women the right to vote, ratified?', 1920, 'year', NARA],
+  ['In what year did Charles Lindbergh make the first solo nonstop flight across the Atlantic?', 1927, 'year', 'Smithsonian National Air and Space Museum'],
+  ['In what year did the Soviet Union launch Sputnik, the first artificial satellite?', 1957, 'year', 'NASA History Office'],
+  ['In what year did Yuri Gagarin become the first person in space?', 1961, 'year', 'NASA History Office'],
+  ['In what year did the Soviet Union break up?', 1991, 'year', BRIT],
+  ['In what year did Hawaii become a US state?', 1959, 'year', NARA],
+  ['In what year did the Channel Tunnel between England and France open?', 1994, 'year', 'Getlink (Eurotunnel)'],
+  ['In what year was the Great Fire of London?', 1666, 'year', 'Museum of London'],
+  ['In what year did the surviving ship of Magellan\'s expedition complete the first trip around the world?', 1522, 'year', BRIT],
+  ['In what year was the Great Clock tower housing Big Ben completed?', 1859, 'year', 'UK Parliament (parliament.uk)'],
+  ['In what year did Howard Carter discover Tutankhamun\'s tomb?', 1922, 'year', 'Griffith Institute, University of Oxford'],
+  ['In what year did euro coins and banknotes first go into circulation?', 2002, 'year', 'European Central Bank'],
+  ['In what year did the US government move to Washington, D.C.?', 1800, 'year', 'US Senate Historical Office'],
+  ['In what year was Nelson Mandela released from prison?', 1990, 'year', 'Nelson Mandela Foundation'],
+
+  // Government & people
+  ['How many states were in the United States after Arizona joined in 1912?', 48, 'states', NARA],
+  ['How many original colonies formed the United States?', 13, 'colonies', NARA],
+  ['How many amendments have been made to the US Constitution?', 27, 'amendments', NARA],
+  ['How many amendments make up the US Bill of Rights?', 10, 'amendments', NARA],
+  ['How many US senators are there in total?', 100, 'senators', 'United States Senate (senate.gov)'],
+  ['How many voting members are in the US House of Representatives?', 435, 'members', 'US House of Representatives (house.gov)'],
+  ['How many justices sit on the US Supreme Court?', 9, 'justices', 'Supreme Court of the United States'],
+  ['How many years is one term for a US senator?', 6, 'years', 'US Constitution, Article I'],
+  ['What is the minimum age to be President of the United States?', 35, 'years old', 'US Constitution, Article II'],
+  ['How many electoral votes are there in total in a US presidential election?', 538, 'votes', NARA],
+  ['How many electoral votes does a candidate need to win the US presidency?', 270, 'votes', NARA],
+  ['Abraham Lincoln was which number US president?', 16, '', WH],
+  ['Franklin D. Roosevelt was which number US president?', 32, '', WH],
+  ['John F. Kennedy was which number US president?', 35, '', WH],
+  ['Barack Obama was which number US president?', 44, '', WH],
+  ['How many presidential elections did Franklin D. Roosevelt win?', 4, 'elections', WH],
+  ['How many years did Queen Elizabeth II reign?', 70, 'years', 'The Royal Family (royal.uk)'],
+  ['How many passengers sailed on the Mayflower?', 102, 'passengers', 'Plimoth Patuxet Museums'],
+  ['How many months did the Pony Express operate?', 18, 'months', 'National Pony Express Association / NPS'],
+  ['How many years did the Berlin Wall stand?', 28, 'years', 'Berlin Wall Foundation'],
+  ['How many Wonders of the Ancient World were there?', 7, 'wonders', BRIT],
+
+  // Countries & maps
+  ['How many member states are in the United Nations?', 193, 'countries', 'United Nations (un.org)'],
+  ['How many countries are in the European Union?', 27, 'countries', 'European Union (european-union.europa.eu)'],
+  ['How many independent countries are in South America?', 12, 'countries', CIA],
+  ['How many states does Australia have?', 6, 'states', 'Australian Government (australia.gov.au)'],
+  ['How many states does Mexico have (not counting Mexico City)?', 31, 'states', 'Government of Mexico (gob.mx)'],
+  ['How many countries share a land border with Brazil?', 10, 'countries', CIA],
+  ['How many countries share a land border with China?', 14, 'countries', CIA],
+  ['How many US states border Canada?', 13, 'states', 'International Boundary Commission'],
+  ['How many US states border Mexico?', 4, 'states', 'International Boundary and Water Commission'],
+  ['How many miles long is the border between the United States and Mexico?', 1954, 'miles', 'International Boundary and Water Commission'],
+  ['How many main islands make up Hawaii?', 8, 'islands', 'Hawaii Tourism Authority'],
+  ['How many counties does Texas have, the most of any state?', 254, 'counties', 'Texas State Library and Archives Commission'],
+  ['How many official national languages does Switzerland have?', 4, 'languages', 'Swiss Federal Administration (admin.ch)'],
+  ['How many official time zones does China use?', 1, 'time zone', CIA, { fact: 'The whole country runs on Beijing time.' }],
+  ['How many stars are on the flag of China?', 5, 'stars', CIA],
+  ['How many stars are on the flag of the European Union?', 12, 'stars', 'European Union, "The European flag"'],
+  ['How many stars are on the flag of Australia?', 6, 'stars', 'Australian Government, "Australian National Flag"'],
+  ['How many points does the maple leaf on Canada\'s flag have?', 11, 'points', 'Government of Canada, "National Flag of Canada"'],
+
+  // Landmarks & landscapes
+  ['How many floors does the Burj Khalifa in Dubai have?', 163, 'floors', 'Emaar Properties, Burj Khalifa'],
+  ['How many meters tall is the Burj Khalifa?', 828, 'm', 'Council on Tall Buildings and Urban Habitat'],
+  ['About how many feet tall was the Great Pyramid of Giza when it was built?', 481, 'ft', BRIT],
+  ['How many feet long is the main span of the Golden Gate Bridge?', 4200, 'ft', 'Golden Gate Bridge, Highway & Transportation District'],
+  ['How many feet tall is the Washington Monument?', 555, 'ft', NPS],
+  ['How many feet tall is the Gateway Arch in St. Louis?', 630, 'ft', NPS, { fact: 'It is also exactly 630 feet wide at its base.' }],
+  ['About how many miles long is the Panama Canal?', 50, 'miles', 'Panama Canal Authority'],
+  ['About how many miles long is the Mississippi River?', 2340, 'miles', NPS],
+  ['How many river miles long is the Grand Canyon?', 277, 'miles', NPS],
+  ['How many feet tall is Mount Whitney, the highest peak in the contiguous United States?', 14505, 'ft', 'US Geological Survey'],
+  ['Badwater Basin in Death Valley is the lowest point in North America. What is its elevation in feet?', -282, 'ft', NPS, { hint: 'Negative numbers allowed!' }],
+];
+
+export const GEOGRAPHY_QUESTIONS = buildQuestions('geography', 'xgh', rows);
