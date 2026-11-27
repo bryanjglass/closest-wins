@@ -210,7 +210,7 @@ test('host, TV and four players: both modes, ties, exact bonus, busts, timeouts,
   await hostNextFrom(host, 'answerReveal');
   await tvPhase(tv, 'scoreboard');
   await expectScores(tv, seats, expected);
-  await hostNext(host);
+  await hostNextFrom(host, 'scoreboard'); // the host may still skip ahead
 
   // ---------------------------------------------------------------- Round 2
   // Without Going Over: everyone goes over → nobody scores. All lock → auto-advance.
@@ -228,7 +228,10 @@ test('host, TV and four players: both modes, ties, exact bonus, busts, timeouts,
   await hostNextFrom(host, 'answerReveal');
   await tvPhase(tv, 'scoreboard');
   await expectScores(tv, seats, expected);
-  await hostNext(host);
+  // No host input: the scoreboard counts down and the next question starts by itself.
+  await expect(tv.getByTestId('tv-next-hint')).toContainText('Next question in');
+  await expect(ann.page.getByTestId('next-countdown').getByRole('timer')).toBeVisible();
+  await tvPhase(tv, 'question', 20_000);
 
   // ---------------------------------------------------------------- Round 3
   // Closest: Ann saves a draft, refreshes her phone, never locks → the draft counts at timeout.
@@ -257,7 +260,7 @@ test('host, TV and four players: both modes, ties, exact bonus, busts, timeouts,
   await hostNextFrom(host, 'answerReveal');
   await tvPhase(tv, 'scoreboard');
   await expectScores(tv, seats, expected);
-  await hostNext(host);
+  await hostNextFrom(host, 'scoreboard');
 
   // ---------------------------------------------------------------- Round 4
   // Without Going Over: exact answer, one bust, a tie for 2nd.
@@ -275,7 +278,7 @@ test('host, TV and four players: both modes, ties, exact bonus, busts, timeouts,
   await hostNextFrom(host, 'answerReveal');
   await tvPhase(tv, 'scoreboard');
   await expectScores(tv, seats, expected);
-  await hostNext(host);
+  await hostNextFrom(host, 'scoreboard');
 
   // ---------------------------------------------------------------- Round 5
   // Closest: Dan's phone goes away — he must not block the others. Ann & Ben tie for 1st.
@@ -290,6 +293,7 @@ test('host, TV and four players: both modes, ties, exact bonus, busts, timeouts,
   add({ Ann: 1000, Ben: 1000, Cat: 250, Dan: 0 });
   await hostNextFrom(host, 'answerReveal');
   await tvPhase(tv, 'scoreboard');
+  await expect(tv.getByTestId('tv-next-hint')).toContainText('Final results in');
   // Dan reconnects with his stored credentials and keeps his seat and score.
   await dan.page.goto(`/#/play/${code}`);
   await expect(dan.page.getByTestId('my-name')).toHaveText('Dan');
@@ -297,8 +301,8 @@ test('host, TV and four players: both modes, ties, exact bonus, busts, timeouts,
   expect(expected).toEqual({ Ann: 4000, Ben: 2500, Cat: 1500, Dan: 750 });
 
   // ---------------------------------------------------------------- Game over
-  await hostNext(host);
-  await tvPhase(tv, 'gameOver');
+  // The last scoreboard hands over to the final results by itself.
+  await tvPhase(tv, 'gameOver', 20_000);
   await expect(tv.getByTestId('tv-winner-name')).toHaveText('Ann');
   await expect(host.getByTestId('host-winner')).toContainText('Ann');
   for (const [name, score] of Object.entries(expected)) {
@@ -433,7 +437,7 @@ test('pause/resume, skip, number validation, reduced motion and unauthorized cli
   expect(results.player.errors).toEqual(['NOT_AUTHORIZED', 'NOT_AUTHORIZED', 'NOT_JOINED']);
   expect(results.display.errors).toEqual(['NOT_AUTHORIZED']);
   // Nothing they sent changed the game (a restart would have gone back to the lobby).
-  await expect(tv.getByTestId('tv')).toHaveAttribute('data-phase', /answerReveal|scoreboard/);
+  await expect(tv.getByTestId('tv')).not.toHaveAttribute('data-phase', 'lobby');
 
   // A different browser can't take over the host controls.
   const intruderCtx = await browser.newContext();
@@ -448,7 +452,7 @@ test('pause/resume, skip, number validation, reduced motion and unauthorized cli
   const otherCode = await createGame(other);
   expect(otherCode).not.toBe(code);
   await expect(other.getByTestId('host-players')).not.toContainText('Ann');
-  await expect(tv.getByTestId('tv')).toHaveAttribute('data-phase', /answerReveal|scoreboard/);
+  await expect(tv.getByTestId('tv')).not.toHaveAttribute('data-phase', 'lobby');
 
   await intruderCtx.close();
   await tvCtx.close();

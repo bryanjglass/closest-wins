@@ -3,6 +3,7 @@ import type { GameView } from '../../../../shared/protocol';
 import { Avatar } from '../../components/Avatar';
 import { Confetti } from '../../components/Confetti';
 import { Leaderboard } from '../../components/Leaderboard';
+import { useCountdown } from '../../hooks/useCountdown';
 import { usePlayerMap } from '../../hooks/usePlayers';
 import { sfx } from '../../lib/sfx';
 import { Banner } from './shared';
@@ -12,12 +13,17 @@ export function TvScoreboard({ view }: { view: GameView }) {
   const players = usePlayerMap(view);
   const last = view.round >= view.totalRounds;
   const rowRem = view.standings.length > 8 ? 3.75 : view.standings.length > 6 ? 4.3 : 5.4;
+  const { remainingMs } = useCountdown(view.timer);
+  const secondsLeft = Math.ceil(remainingMs / 1000);
   return (
     <div className="h-full flex flex-col px-[12rem] pt-[0.6rem] pb-[2rem] gap-[1rem]">
       <div className="flex items-center justify-between">
         <Banner tone="mint">Scoreboard</Banner>
         <div className="text-[1.8rem] text-cream/80" data-testid="tv-next-hint">
-          {last ? 'Final results coming up…' : `After ${view.round} of ${view.totalRounds} questions`}
+          {last ? 'Final results in ' : `After ${view.round} of ${view.totalRounds} questions · Next question in `}
+          <span className="font-display text-sun tabular" data-testid="tv-next-countdown">
+            {!view.timer ? '…' : view.paused ? '❚❚' : secondsLeft}
+          </span>
         </div>
       </div>
       <Leaderboard standings={view.standings} players={players} rowRem={rowRem} />

@@ -323,6 +323,54 @@ describe('timers', () => {
     game.resume(g.s, g.ctx());
     expect(g.s.phase).toBe('guessReveal');
   });
+
+  it('times the scoreboard and moves on to the next question by itself', () => {
+    const g = setup(['A', 'B']);
+    toGuessing(g);
+    game.submitGuess(g.s, 'p1', '100', true, g.ctx());
+    game.submitGuess(g.s, 'p2', '90', true, g.ctx());
+    while (g.s.phase !== 'scoreboard') {
+      g.clock.now = game.nextDeadline(g.s)!;
+      expect(game.tick(g.s, g.ctx())).toBe(true);
+    }
+    expect(game.nextDeadline(g.s)).toBe(g.clock.now + TIMING.scoreboardMs);
+    g.clock.now += TIMING.scoreboardMs - 1;
+    expect(game.tick(g.s, g.ctx())).toBe(false);
+    g.clock.now += 1;
+    expect(game.tick(g.s, g.ctx())).toBe(true);
+    expect(g.s.phase).toBe('question');
+    expect(g.s.roundIndex).toBe(1);
+  });
+
+  it('plays every question to game over with timers alone, then stops', () => {
+    const g = setup(['A', 'B', 'C'], { questionCount: 5 });
+    game.startGame(g.s, g.ctx());
+    const phases: Phase[] = [];
+    for (let i = 0; i < 100 && g.s.phase !== 'gameOver'; i++) {
+      g.clock.now = game.nextDeadline(g.s)!;
+      expect(game.tick(g.s, g.ctx())).toBe(true);
+      phases.push(g.s.phase);
+    }
+    expect(g.s.phase).toBe('gameOver');
+    expect(phases.filter((p) => p === 'question')).toHaveLength(4); // rounds 2-5 (round 1 began at start)
+    expect(phases.filter((p) => p === 'scoreboard')).toHaveLength(5);
+    expect(g.s.history).toHaveLength(5);
+    expect(game.nextDeadline(g.s)).toBeNull(); // game over waits for a rematch
+  });
+
+  it('the host can pause on the scoreboard to linger', () => {
+    const g = setup(['A', 'B']);
+    toGuessing(g);
+    while (g.s.phase !== 'scoreboard') game.advance(g.s, g.ctx());
+    game.pause(g.s, g.ctx());
+    g.clock.now += 60 * 60_000;
+    expect(game.tick(g.s, g.ctx())).toBe(false);
+    expect(g.s.phase).toBe('scoreboard');
+    game.resume(g.s, g.ctx());
+    g.clock.now += TIMING.scoreboardMs;
+    expect(game.tick(g.s, g.ctx())).toBe(true);
+    expect(g.s.phase).toBe('question');
+  });
 });
 
 describe('scoring integration', () => {

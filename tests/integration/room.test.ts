@@ -231,6 +231,53 @@ describe('a full game over the controller', () => {
   });
 });
 
+describe('hands-free play', () => {
+  it('after Start, the game reaches game over with no further host input', async () => {
+    const { host, tv, ann, ben, cat, dan } = await lobbyWithFour();
+    await configureAndStart(host);
+    const hostMessagesAfterStart = host.messages.length;
+    await room.drop(host); // the host can even walk away
+
+    for (let r = 1; r <= 5; r++) {
+      await room.runUntilPhase('guessing');
+      expect(tv.state.round).toBe(r);
+      // Every test question in "weird" has answer 100.
+      await guess(ann, 100);
+      await guess(ben, 90);
+      await guess(cat, 80);
+      await guess(dan, 70);
+      await room.runUntilPhase('scoreboard');
+      expect(tv.state.timer?.durationMs).toBe(TIMING.scoreboardMs);
+    }
+    await room.runUntilPhase('gameOver');
+    expect(host.messages.length).toBe(hostMessagesAfterStart);
+    expect(scores()).toEqual({ Ann: 5 * 1250, Ben: 5 * 500, Cat: 5 * 250, Dan: 0 });
+    expect(room.storage.data!.history).toHaveLength(5);
+  });
+
+  it('even with nobody acting at all, timers carry the game to the end', async () => {
+    const { host } = await lobbyWithFour();
+    await configureAndStart(host);
+    for (const c of room.conns) await room.drop(c);
+    await room.runUntilPhase('gameOver', 100);
+    expect(room.storage.data!.players.every((p) => p.score === 0)).toBe(true);
+  });
+
+  it('host pause on the scoreboard holds the game until resumed', async () => {
+    const { host, tv } = await lobbyWithFour();
+    await configureAndStart(host);
+    await room.runUntilPhase('scoreboard');
+    await hostDo(host, { kind: 'pause' });
+    expect(tv.state.paused).toBe(true);
+    await room.advanceTime(10 * 60_000);
+    expect(room.storage.data!.phase).toBe('scoreboard');
+    await hostDo(host, { kind: 'resume' });
+    await room.advanceTime(TIMING.scoreboardMs);
+    expect(room.storage.data!.phase).toBe('question');
+    expect(tv.state.round).toBe(2);
+  });
+});
+
 describe('timers & reliability', () => {
   it('timers survive Durable Object reactivation and fire with nobody connected', async () => {
     const { host, ann, players } = await lobbyWithFour();
