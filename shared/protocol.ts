@@ -72,6 +72,8 @@ export const TIMING = {
   questionIntroMs: 5000,
   guessRevealMs: 7000,
   answerRevealMs: 10000,
+  /** How long the standings stay up before the next question (or the final results). */
+  scoreboardMs: 10000,
 } as const;
 
 export const ROOM_CODE_ALPHABET = 'BCDFGHJKLMNPQRSTVWXZ';

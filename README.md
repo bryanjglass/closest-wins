@@ -19,6 +19,8 @@ client, alarm-driven timers) is reused from **Fib Factory** and adapted for this
 2. **Players:** scan the QR code on the TV (or enter the room code), type a name and pick an avatar.
    The host can join too, from their phone.
 3. **Host:** choose the scoring mode, 5/10/15/20 questions, the categories and a 15/30/45/60-second timer, then **Start game**.
+   From here the game runs itself to the final results. Every step advances on a timer, and the host only needs to
+   touch the controller to **pause** (or to skip ahead).
 4. Each round:
    1. **Question** — the TV shows the question, its unit and how this round is scored.
    2. **Guessing** — type a number on your phone. It saves automatically and you can change it until you press
@@ -26,7 +28,8 @@ client, alarm-driven timers) is reused from **Fib Factory** and adapted for this
       (your last saved guess counts).
    3. **Guess reveal** — every guess appears on an animated number line. No answer yet!
    4. **Answer reveal** — the answer drops onto the line, with each player's difference, the winners and any busts.
-   5. **Scoreboard** — points are awarded and the leaderboard slides into its new order.
+   5. **Scoreboard** — points are awarded and the leaderboard slides into its new order. It counts down for
+      10 seconds, then the next question starts automatically.
 5. After the last question the TV crowns the winner, with final standings, stats and awards. The host can start a
    **rematch**: same players, scores reset, fresh questions.
 
@@ -93,8 +96,12 @@ lobby → question → guessing → guessReveal → answerReveal → scoreboard 
 ```
 
 - Legal transitions are declared in `TRANSITIONS` (`server/engine/game.ts`); anything else is rejected with `INVALID_TRANSITION`.
-- `question` (5 s), `guessing` (host-configured), `guessReveal` (7 s) and `answerReveal` (10 s) are timed by the
-  server; the host can press **Next** to move on early. `scoreboard → next question` waits for the host.
+- **Every in-game phase is timed by the server**, so after **Start** a game plays to `gameOver` with no host input:
+  `question` (5 s), `guessing` (host-configured), `guessReveal` (7 s), `answerReveal` (10 s) and `scoreboard` (10 s).
+  Guessing also ends early once every *connected* contestant has locked in. All fixed durations live in `TIMING`
+  in `shared/protocol.ts`.
+- The host can still **pause/resume** any phase (including the scoreboard, to linger), press **Next** to move on
+  early, or return to the lobby. `gameOver` waits for the host to start a rematch.
 - Every host **Next**/**Skip** carries the phase and round it was meant for. A double-click or a retried message
   that arrives after the game moved on is rejected (`STALE_ACTION`) instead of skipping ahead.
 - **Skip question** (during the intro or guessing) swaps in an unused question for the same round; skipped questions
@@ -201,7 +208,7 @@ Run the halves separately with `npm run dev:server` and `npm run dev:client`.
 
 | Command | What it does |
 | --- | --- |
-| `npm test` | Vitest unit + integration suites (116 tests, ~1 s): scoring and ties, number validation and exact arithmetic, number-line layout, state transitions, timers (fake clock), pause/skip, views/secrecy, the question bank, the room controller over fake sockets (auth, reconnection, DO reactivation, idempotent scoring, room isolation) and Worker routing. |
+| `npm test` | Vitest unit + integration suites (122 tests, ~1 s): scoring and ties, number validation and exact arithmetic, number-line layout, state transitions, timers (fake clock), pause/skip, views/secrecy, the question bank, the room controller over fake sockets (auth, reconnection, DO reactivation, idempotent scoring, room isolation) and Worker routing. |
 | `npm run test:e2e` | Playwright. Starts `wrangler dev` and Vite on ports 8799/5179 and plays real games: a host, a TV tab and **four** phone-sized players complete a 5-question Mixed game covering both scoring modes, an exact-answer bonus, ties, everyone going over, a missing guess, a timeout that finalizes an unlocked draft, player/host/TV refresh, a dropped phone that reconnects, exact cumulative scores every round, game over, and a rematch with fresh questions. A second test covers skip, pause/resume, number validation, reduced motion, unauthorized clients and unknown rooms. About 1 minute. |
 | `npm run typecheck` | TypeScript for the client/tests and the Worker. |
 | `npm run test:all` | All of the above. |

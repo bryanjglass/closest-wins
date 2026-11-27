@@ -4,6 +4,10 @@
  *   lobby → question → guessing → guessReveal → answerReveal → scoreboard ─┬→ question (next round)
  *                                                                           └→ gameOver → (rematch) → lobby
  *
+ * Once the host presses Start, every phase is timed by the server and the game
+ * plays through to gameOver with no further host input. The host may still
+ * skip ahead (`advance`), skip a question, or pause/resume at any point.
+ *
  * Every exported function mutates the given state in place. Callers (the room
  * controller) run them against a *clone* and only commit on success, so a
  * thrown GameError never leaves a half-applied change behind.
@@ -384,9 +388,9 @@ function startAnswerReveal(s: GameState, ctx: EngineContext) {
   startTimer(s, TIMING.answerRevealMs, ctx);
 }
 
-function startScoreboard(s: GameState) {
+function startScoreboard(s: GameState, ctx: EngineContext) {
   goTo(s, 'scoreboard');
-  s.timer = null;
+  startTimer(s, TIMING.scoreboardMs, ctx);
 }
 
 function nextRoundOrFinish(s: GameState, ctx: EngineContext) {
@@ -420,7 +424,7 @@ function step(s: GameState, ctx: EngineContext) {
     case 'guessReveal':
       return startAnswerReveal(s, ctx);
     case 'answerReveal':
-      return startScoreboard(s);
+      return startScoreboard(s, ctx);
     case 'scoreboard':
       return nextRoundOrFinish(s, ctx);
     default:

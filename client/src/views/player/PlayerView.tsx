@@ -485,6 +485,10 @@ function MyStanding({ view, me }: { view: GameView; me: MeView }) {
         </div>
       )}
       <div className="mt-4 text-base text-cream/70">Look at the TV for the full scoreboard.</div>
+      <p className="mt-2 text-base text-cream/70">{view.round >= view.totalRounds ? 'Final results in…' : 'Next question in…'}</p>
+      <div className="w-64 mt-1" data-testid="next-countdown">
+        <TimerBar timer={view.timer} />
+      </div>
     </Centered>
   );
 }
